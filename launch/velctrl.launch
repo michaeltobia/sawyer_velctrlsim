@@ -6,22 +6,27 @@
 
     <group ns="ref_sawyer">
         <param name="tf_prefix" type="string" value="ref_tf"/>
+        <arg name="robot_name" value="ref_bot"/>
         <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
         <node name="ref_js_randomizer" pkg="sawyer_velctrlsim" type="ref_rand_joint_state_pub.py"/>
     </group>
 
     <group ns="main_sawyer">
         <param name="tf_prefix" type="string" value="main_tf"/>
-        <node pkg="tf" type="tf_remap" name="tf_remapper" output="screen">
-            <rosparam param="mappings">
-                [{old: main_tf/base, new: ref_tf/base}]
-            </rosparam>
-        </node>
-        <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
+        <arg name="robot_name" value="main_bot"/>
         <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
           <param name="/use_gui" value="true"/>
         </node>
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
     </group>
+    
+    <node pkg="tf" type="tf_remap" name="tf_remapper" output="screen">
+        <rosparam param="mappings">
+            [{old: main_tf/base, new: ref_tf/base}]
+        </rosparam>
+    </node>
+
+    <node pkg="tf" type="static_transform_publisher" name="fixed_frame_pub" args="0 0 0 0 0 0 ref_tf/base main_tf/base 100"/>
 
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find sawyer_velctrlsim)/rviz/velctrl.rviz" required="true"/>
 
