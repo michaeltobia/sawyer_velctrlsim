@@ -1,0 +1,15 @@
+<!-- <?xml version="1.0" ?> -->
+<!-- <robot name="sawyer" xmlns:xacro="http://www.ros.org/wiki/xacro"> -->
+<launch>
+    <group ns="ref_sawyer">
+
+        <param name="robot_description" command="$(find xacro)/xacro  --inorder '$(find sawyer_description)/urdf/sawyer.urdf.xacro'" />
+
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
+
+        <node name="ref_js_randomizer" pkg="sawyer_velctrlsim" type="ref_rand_joint_state_pub.py"/>
+
+        <node name="rviz" pkg="rviz" type="rviz" args="-d $(find sawyer_velctrlsim)/rviz/velctrl.rviz" required="true"/>
+
+    </group>
+</launch>
