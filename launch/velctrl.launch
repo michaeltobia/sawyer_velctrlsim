@@ -14,12 +14,13 @@
     <group ns="main_sawyer">
         <param name="tf_prefix" type="string" value="main_tf"/>
         <arg name="robot_name" value="main_bot"/>
-        <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+        <!-- <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
           <param name="/use_gui" value="true"/>
-        </node>
+        </node> -->
         <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
+        <node name="main_vel_ctrl" pkg="sawyer_velctrlsim" type="main_vel_ctrl.py"/>
     </group>
-    
+
     <node pkg="tf" type="tf_remap" name="tf_remapper" output="screen">
         <rosparam param="mappings">
             [{old: main_tf/base, new: ref_tf/base}]
