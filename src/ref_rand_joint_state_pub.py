@@ -37,5 +37,6 @@ if __name__=='__main__':
         rate = rospy.Rate(10) #10Hz
         while not rospy.is_shutdown():
             out.pub_random_js()
+            rate.sleep()
     except rospy.ROSInterruptException:
         raise e

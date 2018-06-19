@@ -6,7 +6,8 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /RobotModel1/Links1
+        - /RobotModel1
+        - /RobotModel2
       Splitter Ratio: 0.5
     Tree Height: 565
   - Class: rviz/Selection
@@ -60,11 +61,11 @@ Visualization Manager:
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
         base:
-          Alpha: 0
+          Alpha: 1
           Show Axes: false
           Show Trail: false
         controller_box:
-          Alpha: 0
+          Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
@@ -174,7 +175,7 @@ Visualization Manager:
           Show Trail: false
           Value: true
       Name: RobotModel
-      Robot Description: robot_description
+      Robot Description: /ref_sawyer/robot_description
       TF Prefix: ref_tf
       Update Interval: 0
       Value: true
@@ -318,8 +319,8 @@ Visualization Manager:
           Show Trail: false
           Value: true
       Name: RobotModel
-      Robot Description: robot_description
-      TF Prefix: "main_tf"
+      Robot Description: /main_sawyer/robot_description
+      TF Prefix: main_tf
       Update Interval: 0
       Value: true
       Visual Enabled: true
@@ -348,7 +349,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 3.0654664
+      Distance: 4.73302698
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -384,5 +385,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1200
-  X: 236
-  Y: 106
+  X: 306
+  Y: 225
