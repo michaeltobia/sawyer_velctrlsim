@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+#### CURRENTLY JUST A COPY OF main_vel_ctrl.py -- NOV 13 7:44am ####
+
 import rospy
 import tf
 import numpy as np

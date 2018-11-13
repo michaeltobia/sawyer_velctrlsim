@@ -1,7 +1,7 @@
 # Sawyer Velocity Control Simulation
 
 ### Summary
-This package simulates the use of a velocity control loop to move Sawyer to a desired end effector positon. The desired end effector position is randomly generated my the node `ref_js_randomizer` when `velctrl.launch` is ran.
+This package simulates the use of a velocity control loop to move Sawyer to a desired end effector position. The desired end effector position is randomly generated my the node `ref_js_randomizer` when `velctrl.launch` is ran.
 
 ### File Details
 ##### Launch Files
