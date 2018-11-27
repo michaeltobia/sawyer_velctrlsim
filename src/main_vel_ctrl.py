@@ -12,22 +12,28 @@ import io_util
 
 class MainVelCtrl:
     def __init__(self):
+        ## ROS Init
         rospy.init_node('main_vel_ctrl')
+        self.rate = rospy.Rate(20) # 20Hz
         self.tf_lis = tf.TransformListener()
         self.pub = rospy.Publisher('/main_sawyer/joint_states', JointState, queue_size=10)
-        self.mean_err_pub = rospy.Publisher('/mean_error', Float64, queue_size=10)
-        self.mean_err_msg = Float64()
+        # self.mean_err_pub = rospy.Publisher('/mean_error', Float64, queue_size=10)
+        # self.mean_err_msg = Float64()
+        ## Control Gains
         self.Kp = 10*np.eye(6)
         self.Ki = 0*np.eye(6)
+        ## Robot Description
         self.B_list = s_des.Blist
         self.M = s_des.M
         self.main_js = JointState()
         self.main_js.name = ['right_j0', 'head_pan', 'right_j1', 'right_j2', \
                             'right_j3', 'right_j4', 'right_j5', 'right_j6']
+
+        ##### If I'm sending position messages is this velocity control?
         self.main_js.position = np.ndarray.tolist(np.zeros(8)) #init main_js
+
         self.it_count = 0
         self.int_err = 0
-        # rospy.sleep(1)
         catch = 0
         tf_received = False
         while not tf_received and not rospy.is_shutdown():
@@ -54,11 +60,17 @@ class MainVelCtrl:
             self.int_err = (self.int_err + self.X_e)
         self.V_b = np.dot(self.Kp, self.X_e) + np.dot(self.Ki, self.int_err)
         self.J_b = mr.JacobianBody(self.B_list, self.cur_theta_list)
-        self.theta_dot = np.dot(np.linalg.pinv(self.J_b), self.V_b)
+        T_selector = np.matrix([0,0,0],\
+                               [0,0,0],\
+                               [1,0,0],\
+                               [0,1,0],\
+                               [0,0,1],\
+                               [0,0,0])
+        self.theta_dot = np.dot(T_selector, np.dot(np.linalg.pinv(self.J_b), self.V_b))
         self.delt_theta = self.theta_dot*(1.0/20)
         self.delt_theta = np.insert(self.delt_theta, 1, 0)
         self.main_js.position += self.delt_theta
-        self.mean_err_msg.data = np.mean(self.X_e)
+        # self.mean_err_msg.data = np.mean(self.X_e)
         # print self.mean_err_msg.data
         print np.linalg.norm(self.int_err)
 
@@ -70,15 +82,14 @@ class MainVelCtrl:
     def pub_main_js(self):
         self.main_js.header.stamp = rospy.Time.now()
         self.pub.publish(self.main_js)
-        self.mean_err_pub.publish(self.mean_err_msg)
-        rate.sleep()
+        # self.mean_err_pub.publish(self.mean_err_msg)
+        self.rate.sleep()
 
 
 
 if __name__=='__main__':
     try:
         out = MainVelCtrl()
-        rate = rospy.Rate(20)
         out.pub_main_js()
         print "Press any key to begin"
         io_util.wait_for_press()

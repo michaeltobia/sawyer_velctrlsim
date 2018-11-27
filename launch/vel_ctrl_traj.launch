@@ -1,0 +1,19 @@
+<!-- <?xml version="1.0" ?> -->
+<!-- <robot name="sawyer" xmlns:xacro="http://www.ros.org/wiki/xacro"> -->
+<launch>
+
+    <group ns="main_sawyer">
+        <param name="robot_description" command="$(find xacro)/xacro  --inorder '$(find sawyer_description)/urdf/sawyer.urdf.xacro'" />
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
+            <param name="tf_prefix" type="string" value="main_tf"/>
+        </node>
+        <node name="vel_ctrl" pkg="sawyer_velctrlsim" type="vel_ctrl.py"/>
+    </group>
+
+
+    <node name="ref_trajectory" pkg="sawyer_velctrlsim" type="traj_gen.py"/>
+
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find sawyer_velctrlsim)/rviz/vel_ctrl_traj.rviz" required="true"/>
+    <!-- <node name="rviz" pkg="rviz" type="rviz"/> -->
+
+</launch>
