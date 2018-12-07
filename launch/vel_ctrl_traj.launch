@@ -7,7 +7,7 @@
         <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
             <param name="tf_prefix" type="string" value="main_tf"/>
         </node>
-        <node name="vel_ctrl" pkg="sawyer_velctrlsim" type="vel_ctrl.py"/>
+        <node name="vel_ctrl" pkg="sawyer_velctrlsim" type="vel_ctrl.py" output="screen"/>
     </group>
 
 

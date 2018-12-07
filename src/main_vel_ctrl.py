@@ -21,7 +21,7 @@ class MainVelCtrl:
         # self.mean_err_msg = Float64()
         ## Control Gains
         self.Kp = 10*np.eye(6)
-        self.Ki = 0*np.eye(6)
+        self.Ki = 1*np.eye(6)
         ## Robot Description
         self.B_list = s_des.Blist
         self.M = s_des.M
@@ -57,16 +57,10 @@ class MainVelCtrl:
         self.X = mr.FKinBody(self.M, self.B_list, self.cur_theta_list)
         self.X_e = mr.se3ToVec(mr.MatrixLog6(np.dot(mr.TransInv(self.X), self.X_d)))
         if np.linalg.norm(self.int_err) < 10 and np.linalg.norm(self.int_err) > -10:
-            self.int_err = (self.int_err + self.X_e)
+            self.int_err = (self.int_err + self.X_e)*(0.5/20)
         self.V_b = np.dot(self.Kp, self.X_e) + np.dot(self.Ki, self.int_err)
         self.J_b = mr.JacobianBody(self.B_list, self.cur_theta_list)
-        T_selector = np.matrix([0,0,0],\
-                               [0,0,0],\
-                               [1,0,0],\
-                               [0,1,0],\
-                               [0,0,1],\
-                               [0,0,0])
-        self.theta_dot = np.dot(T_selector, np.dot(np.linalg.pinv(self.J_b), self.V_b))
+        self.theta_dot = np.dot(np.linalg.pinv(self.J_b), self.V_b)
         self.delt_theta = self.theta_dot*(1.0/20)
         self.delt_theta = np.insert(self.delt_theta, 1, 0)
         self.main_js.position += self.delt_theta

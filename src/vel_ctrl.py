@@ -27,7 +27,15 @@ class VelCtrl:
         rospy.init_node('vel_ctrl')
         self.tf_lis = tf.TransformListener()
         self.sub = rospy.Subscriber("/desired_trajectory", TransformStamped, self.ctrl_r)
-        self.pub = rospy.Publisher('joint_states', JointState, queue_size=10)
+
+
+        #####TESTING PUBLISHERS######
+        self.pub = rospy.Publisher('joint_states', JointState, queue_size=10) ### Rviz traj follower
+
+        #### TESTESTESTESTESTESTESTESTESTESTESTESTEST ######
+        # self.pub = rospy.Publisher('robot/limb/right/joint_command', JointState, queue_size=10) ### Gazebo Simulator Only!
+        ####################################################
+
         # self.rate = rospy.Rate(20) # 20Hz
         ## Trajectory Subscriber
         ## Error Publishers
@@ -35,7 +43,7 @@ class VelCtrl:
         # self.mean_err_msg = Float64()
         ## Control Gains
         self.Kp = 2*np.eye(6)
-        self.Ki = 0*np.eye(6)
+        self.Ki = 1*np.eye(6)
         ## Robot Description
         self.B_list = s_des.Blist
         self.M = s_des.M
@@ -77,14 +85,31 @@ class VelCtrl:
 
         ##### FIX THIS!
         if np.linalg.norm(self.int_err) < 10 and np.linalg.norm(self.int_err) > -10: # int_err limit (-10, 10)
-            self.int_err = (self.int_err + self.X_e) # Add int_err straight to X_e?
+            self.int_err = (self.int_err + self.X_e)*(0.5/20) # Add int_err straight to X_e?
 
         # Get body twist command V_b = K_p . X_e + K_i . int(X_e)
         self.V_b = np.dot(self.Kp, self.X_e) + np.dot(self.Ki, self.int_err)
         # Get body Jacobian from robot_des and cur' joint positions
         self.J_b = mr.JacobianBody(self.B_list, cur_theta_list)
+        # Hybrid Control Prototype (surprise, doesnt work)
+        T_selector = np.matrix([[0,0,0],\
+                               [0,0,0],\
+                               [1,0,0],\
+                               [0,1,0],\
+                               [0,0,1],\
+                               [0,0,0]])
+        Y_selector = np.matrix([[1,0,0],\
+                               [0,1,0],\
+                               [0,0,0],\
+                               [0,0,0],\
+                               [0,0,0],\
+                               [0,0,1]])
         # Get joint velocity command from theta_dot = pint(J_b)V_b
-        theta_dot = np.dot(np.linalg.pinv(self.J_b), self.V_b)
+        J_b_pinv = np.linalg.pinv(self.J_b)
+        theta_dot = np.dot(J_b_pinv, self.V_b)
+        coeff_null = (np.eye(7) - np.dot(self.J_b.T, J_b_pinv.T))
+        theta_dot += np.dot(coeff_null, theta_dot)
+        # theta_dot = np.dot(np.linalg.pinv(self.J_b), np.dot(self.V_b, Y_selector))
 
         # self.main_js.velocity = self.theta_dot # set new joint velocities
         # self.main_js.header.stamp = rospy.Time.now() # get header stamp
@@ -96,6 +121,17 @@ class VelCtrl:
         delt_theta = np.insert(delt_theta, 1, 0)
         self.main_js.position += delt_theta
         self.pub_main_js()
+
+
+        # ###### TESTESTESTESTESTESTESTESTESTESTESTESTEST ##############
+        # #TESTING VELOCITY COMMANDS
+        # # Position command stuff
+        # delt_theta = theta_dot
+        # delt_theta = np.insert(delt_theta, 1, 0)
+        # self.main_js.position += delt_theta
+        # self.pub_main_js()
+        # ###########################################################
+
         # self.mean_err_msg.data = np.mean(self.X_e) ## FIX THIS
         # print self.mean_err_msg.data ## DEBUG PRINT
         # print np.linalg.norm(self.int_err) ## FIX THIS
