@@ -3,7 +3,7 @@
 import rospy
 import tf
 import numpy as np
-from sensor_msgs.msg import JointState  ## Still needed?
+from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64, Int32
 from geometry_msgs.msg import TransformStamped
 from intera_core_msgs.msg import JointCommand
@@ -26,18 +26,11 @@ class VelCtrl:
         self.tf_lis = tf.TransformListener()
 
         ## Trajectory Subscriber
-        self.sub = rospy.Subscriber("/desired_trajectory", TransformStamped, self.ctrl_r)
+        rospy.Subscriber("/desired_trajectory", TransformStamped, self.ctrl_r)
+        rospy.Subscriber("/joint_states", JointState, self.js_store)
 
-        #####TESTING PUBLISHERS######
-        # self.pub = rospy.Publisher('joint_states', JointState, queue_size=10) ### Rviz traj follower
-
-        #### TESTESTESTESTESTESTESTESTESTESTESTESTEST ######
-        self.pub = rospy.Publisher('robot/limb/right/joint_command', JointCommand, queue_size=10) ### Gazebo Simulator Only!
-        ####################################################
-
-        ## Error Publishers
-        # self.mean_err_pub = rospy.Publisher('/mean_error', Float64, queue_size=10)
-        # self.mean_err_msg = Float64()
+        # Control Message Publisher
+        self.pub = rospy.Publisher('/robot/limb/right/joint_command', JointCommand, queue_size=10) ### Gazebo Simulator Only!
 
         ## Control Gains
         self.Kp = 2*np.eye(6)
@@ -46,11 +39,15 @@ class VelCtrl:
         ## Robot Description
         self.B_list = s_des.Blist
         self.M = s_des.M
+        self.cur_config = np.zeros(8)
         self.joint_ctrl_msg = JointCommand()
         self.joint_ctrl_msg.names = ['right_j0', 'head_pan', 'right_j1', 'right_j2', \
                             'right_j3', 'right_j4', 'right_j5', 'right_j6']
-        self.joint_ctrl_msg.mode = VELOCITY_MODE
-        self.joint_ctrl_msg.velocity = Float64(np.zeros(len(self.joint_ctrl_msg.names))) # 0 initial velocity
+
+        self.joint_ctrl_msg.mode = int(2)
+        self.joint_ctrl_msg.velocity = np.ndarray.tolist(np.zeros(len(self.joint_ctrl_msg.names))) # 0 initial velocity
+        # self.pub_joint_ctrl_msg()
+
 
 
         self.it_count = 0 # Iteration count for debug
@@ -61,7 +58,8 @@ class VelCtrl:
 
     def ctrl_r(self, X_d):
         # Get cur' joint positions
-        cur_theta_list = np.delete(self.joint_ctrl_msg.velocity, 1)
+        # print self.cur_config.data
+        cur_theta_list = np.ndarray.tolist(np.delete(self.cur_config, 1))
 
         # Get EEd transform
         # ##### Need Q_d_dot (for feedforward tho)
@@ -85,18 +83,25 @@ class VelCtrl:
         # Get joint velocity command from theta_dot = pint(J_b)V_b
         J_b_pinv = np.linalg.pinv(J_b)
         theta_dot = np.dot(J_b_pinv, V_b)
+        theta_dot = np.insert(theta_dot,1,0)
+        self.joint_ctrl_msg.velocity = np.ndarray.tolist(theta_dot)
 
         ##### NOT NEEDED FOR VELOCITY COMMANDS!
         # Position command stuff
-        delt_theta = theta_dot*(1.0/20)
+        delt_theta = 0.1*theta_dot*(1.0/20)
         delt_theta = np.insert(delt_theta, 1, 0)
         self.pub_joint_ctrl_msg()
+
+    def js_store(self, cur_joint_states):
+        # print cur_joint_states
+        self.cur_config = cur_joint_states.position
 
 
 
     def pub_joint_ctrl_msg(self):
         ### Get this to produce JointCommand msgs in VelCtrl
         self.joint_ctrl_msg.header.stamp = rospy.Time.now() # get header stamp
+        # print self.joint_ctrl_msg
         self.pub.publish(self.joint_ctrl_msg) # publish joint velocities
         # self.mean_err_pub.publish(self.mean_err_msg) # publish mean error
         # self.rate.sleep() # sleep for rate

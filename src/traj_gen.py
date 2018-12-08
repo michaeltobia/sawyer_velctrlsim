@@ -19,7 +19,7 @@ class TrajectoryGenerator:
 
     def trajectory(self, t):
         # x_d = 0.1*cos(2*pi*t/5)
-        x_d = 0.5
+        x_d = -0.5
         y_d = 0.1*sin(2*pi*t/5)
         # y_d = 0
         z_d = 0.1*cos(2*pi*t/5)
@@ -31,7 +31,9 @@ class TrajectoryGenerator:
         x_d, y_d, z_d = self.trajectory(rospy.get_time())
         self.desired_trajectory_frame.transform.translation = Vector3(x_d,y_d,z_d)
         # self.desired_trajectory_frame.transform.translation = Vector3(0,0,0)
-        self.desired_trajectory_frame.transform.rotation = Quaternion(0.70710678, 0, 0.70710678, 0)
+        # self.desired_trajectory_frame.transform.rotation = Quaternion(0.70710678, 0, 0.70710678, 0)
+        # self.desired_trajectory_frame.transform.rotation = Quaternion(0.5, 0.5, 0.5, 0.5)
+        self.desired_trajectory_frame.transform.rotation = Quaternion(0.0, 0.0, 0.5, 0.0)
         self.desired_wrench.force = Vector3(0,0,0)
         self.desired_wrench.torque = Vector3(0,0,0)
         self.pub_motion.publish(self.desired_trajectory_frame)

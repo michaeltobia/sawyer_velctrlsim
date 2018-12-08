@@ -174,7 +174,7 @@ Visualization Manager:
           Show Trail: false
           Value: true
       Name: RobotModel
-      Robot Description: /main_sawyer/robot_description
+      Robot Description: /robot_description
       TF Prefix: main_tf
       Update Interval: 0
       Value: true
