@@ -108,7 +108,5 @@ if __name__=='__main__':
         out = VelCtrl()
         out.pub_joint_ctrl_msg()
         rospy.spin()
-        # while not rospy.is_shutdown():
-        #     out.pub_joint_ctrl_msg()
     except rospy.ROSInterruptException:
         raise e

@@ -2,14 +2,13 @@
 <!-- <robot name="sawyer" xmlns:xacro="http://www.ros.org/wiki/xacro"> -->
 <launch>
 
-    <group ns="main_sawyer">
-        <param name="robot_description" command="$(find xacro)/xacro  --inorder '$(find sawyer_description)/urdf/sawyer.urdf.xacro'" />
-        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
-            <param name="tf_prefix" type="string" value="main_tf"/>
-        </node>
-        <node name="vel_ctrl" pkg="sawyer_velctrlsim" type="vel_ctrl.py" output="screen"/>
-    </group>
 
+    <param name="robot_description" command="$(find xacro)/xacro  --inorder '$(find sawyer_description)/urdf/sawyer.urdf.xacro'" />
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
+        <param name="tf_prefix" type="string" value="main_tf"/>
+    </node>
+    <node name="vel_ctrl" pkg="sawyer_velctrlsim" type="vel_ctrl.py" output="screen"/>
+    <node name="vel_ctrl_sim_interface" pkg="sawyer_velctrlsim" type="vel_ctrl_sim_interface.py"/>
 
     <node name="ref_trajectory" pkg="sawyer_velctrlsim" type="traj_gen.py"/>
 
