@@ -11,6 +11,10 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   rviz
   std_msgs
+  sensor_msgs
+  intera_core_msgs
+  intera_motion_msgs
+  intera_interface
   tf
   xacro
 )
