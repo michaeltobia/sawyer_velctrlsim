@@ -13,15 +13,13 @@ import io_util
 class MainVelCtrl:
     def __init__(self):
         ## ROS Init
-        rospy.init_node('main_vel_ctrl')
+        rospy.init_node('ref_vel_ctrl')
         self.rate = rospy.Rate(20) # 20Hz
         self.tf_lis = tf.TransformListener()
         self.pub = rospy.Publisher('/main_sawyer/joint_states', JointState, queue_size=10)
-        # self.mean_err_pub = rospy.Publisher('/mean_error', Float64, queue_size=10)
-        # self.mean_err_msg = Float64()
         ## Control Gains
-        self.Kp = 10*np.eye(6)
-        self.Ki = 1*np.eye(6)
+        self.Kp = 2.3*np.eye(6)
+        self.Ki = 1.2*np.eye(6)
         ## Robot Description
         self.B_list = s_des.Blist
         self.M = s_des.M
@@ -29,11 +27,10 @@ class MainVelCtrl:
         self.main_js.name = ['right_j0', 'head_pan', 'right_j1', 'right_j2', \
                             'right_j3', 'right_j4', 'right_j5', 'right_j6']
 
-        ##### If I'm sending position messages is this velocity control?
         self.main_js.position = np.ndarray.tolist(np.zeros(8)) #init main_js
 
         self.it_count = 0
-        self.int_err = 0
+        self.int_err = np.zeros(6)
         catch = 0
         tf_received = False
         while not tf_received and not rospy.is_shutdown():
@@ -50,33 +47,30 @@ class MainVelCtrl:
 
 
     def ctrl_r(self):
-        # self.it_count += 1
-        # print self.it_count
         self.cur_theta_list = np.delete(self.main_js.position, 1)
         self.X_d = self.tf_lis.fromTranslationRotation(self.p_d, self.Q_d)
         self.X = mr.FKinBody(self.M, self.B_list, self.cur_theta_list)
         self.X_e = mr.se3ToVec(mr.MatrixLog6(np.dot(mr.TransInv(self.X), self.X_d)))
-        if np.linalg.norm(self.int_err) < 10 and np.linalg.norm(self.int_err) > -10:
-            self.int_err = (self.int_err + self.X_e)*(0.5/20)
+        self.int_err = (self.int_err + self.X_e) * (0.5/20)
+        # hard limit int_err elements to 0.5 per to prevent int_err runaway
+        for i in range(len(self.int_err)):
+            err_i = self.int_err[i]
+            if abs(err_i) > 0.5:
+                self.int_err[i] = np.sign(err_i) * 0.5
         self.V_b = np.dot(self.Kp, self.X_e) + np.dot(self.Ki, self.int_err)
         self.J_b = mr.JacobianBody(self.B_list, self.cur_theta_list)
         self.theta_dot = np.dot(np.linalg.pinv(self.J_b), self.V_b)
+        for i in range(len(self.theta_dot)):
+            if abs(self.theta_dot[i]) > 2:
+                self.theta_dot[i] = np.sign(self.theta_dot[i])*2
+
         self.delt_theta = self.theta_dot*(1.0/20)
         self.delt_theta = np.insert(self.delt_theta, 1, 0)
         self.main_js.position += self.delt_theta
-        # self.mean_err_msg.data = np.mean(self.X_e)
-        # print self.mean_err_msg.data
-        print np.linalg.norm(self.int_err)
-
-        # print(self.theta_dot)
-
-        # THETA DOT NEXT
-
 
     def pub_main_js(self):
         self.main_js.header.stamp = rospy.Time.now()
         self.pub.publish(self.main_js)
-        # self.mean_err_pub.publish(self.mean_err_msg)
         self.rate.sleep()
 
 

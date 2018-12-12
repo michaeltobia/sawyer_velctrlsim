@@ -13,22 +13,11 @@
 
     <group ns="main_sawyer">
         <param name="robot_description" command="$(find xacro)/xacro  --inorder '$(find sawyer_description)/urdf/sawyer.urdf.xacro'" />
-        <!-- <arg name="robot_name" value="main_bot"/> -->
-        <!-- <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
-            <param name="use_gui" value="true"/>
-        </node> -->
         <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
             <param name="tf_prefix" type="string" value="main_tf"/>
         </node>
-        <node name="main_vel_ctrl" pkg="sawyer_velctrlsim" type="main_vel_ctrl.py" output="screen"/>
+        <node name="ref_vel_ctrl" pkg="sawyer_velctrlsim" type="ref_vel_ctrl.py" output="screen"/>
     </group>
-
-
-    <!-- <node pkg="tf" type="tf_remap" name="tf_remapper" output="screen">
-        <rosparam param="mappings">
-            [{old: main_tf/base, new: ref_tf/base}]
-        </rosparam>
-    </node> -->
 
     <node pkg="tf" type="static_transform_publisher" name="fixed_frame_pub" args="0 0 0 0 0 0 ref_tf/base main_tf/base 100"/>
 
