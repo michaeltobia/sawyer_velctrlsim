@@ -83,4 +83,32 @@ to the trajectory specified in `traj_gen.py`
 
 * A fair amount of cautious respect should be given when running Sawyer in velocity control
 mode. The velocity limits on Sawyer's joints are surprisingly high and can cause damage
-or injury if this launch file is used with out some level of care. To prevent damage, 
+or injury if this launch file is used with out some level of care. To prevent damage, joint velocity
+commands can be limited in `sawyer_vel_ctrl.py` [here](https://github.com/michaeltobia/sawyer_velctrlsim/blob/0ab7adfe4be4a372230d1d4fa44a1a1a1e5e1849/src/sawyer_vel_ctrl.py#L108-L111). Joint speed can also be limited by reducing the proportional control
+coefficient `self.Kp` in `sawyer_vel_ctrl.py`. This is not a direct limit, but it will reduce the
+aggression of the controller resulting in slower trajectory tracking.
+
+* More information about Sawyer's joint control modes can be found on the Intera SDK site [here](http://sdk.rethinkrobotics.com/intera/Arm_Control_Systems#Joint_Control_Modes)
+
+* This launch file only runs two nodes
+ 1. `sawyer_vel_ctrl`: Control loop. Takes drives Sawyer's end effector to the most recently
+received `TransformStamped` message published on the `/desiired_trajectory` topic. This node stores
+Sawyer's joint states every time it is published over the `/robot/joint_states` message. Forward kinematics
+is then used to calculate the current end effector position. Finally, a velocity command
+is calculated from the error between the current end effector position and the desired
+end effector position. This velocity command is send as a `intera_core_msgs/JointCommand`
+over the `/robot/limb/right/joint_command` topic. These commands are then processed by Saywer's
+internal `realtime_loop` to send velocity commands to Sawyer's joints.
+
+ 2. `ref_trajectory`: Desired trajectory generator. Generates `TransformStamped` messages
+ according to the specified task-space trajectory in `traj_gen.py` and publishes them to the
+ `/desired_trajectory` topic. It should be noted that this is the same `traj_gen.py` file used
+ in `sim_vel_ctrl.launch`. This makes it very easy to test a trajectory using `sim_vel_ctrl.launch`
+ before running `sawyer_vel_ctrl.launch`. **I highly recommend running `sim_vel_ctrl.launch`
+ any time `traj_gen.py` is changed to prevent accidents**
+
+* Video of this launch file running has been taken and will be uploaded in the very near future.
+That said, running this launch file while connected to Sawyer will cause Sawyer to follow the
+trajectory specified in `traj_gen.py` "exactly" (approximately) the same way it does in `sim_vel_ctrl.launch`.
+
+#### `unidirectional_force_control.launch`
