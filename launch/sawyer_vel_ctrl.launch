@@ -1,6 +1,6 @@
 <launch>
 
-    <node name="sawyer_vel_ctrl" pkg="sawyer_velctrlsim" type="sawyer_vel_ctrl.py" output="screen"/>
+    <node name="sawyer_vel_ctrl" pkg="sawyer_velctrlsim" type="sawyer_vel_ctrl.py"/>
     <node name="ref_trajectory" pkg="sawyer_velctrlsim" type="traj_gen.py"/>
 
 </launch>
