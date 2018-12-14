@@ -24,20 +24,20 @@ TRAJECTORY_MODE = int(4)
 class VelCtrl:
     def __init__(self):
         # Init node
-        rospy.init_node('sim_vel_ctrl')
+        rospy.init_node('sawyer_vel_ctrl')
         # tflistener Init
         self.tf_lis = tf.TransformListener()
 
         # Trajectory Subscriber
         rospy.Subscriber("/desired_trajectory", TransformStamped, self.ctrl_r)
         # Joint States Subscriber
-        rospy.Subscriber("/joint_states", JointState, self.js_store)
+        rospy.Subscriber("/robot/joint_states", JointState, self.js_store)
 
         # Control Message Publisher
         self.pub = rospy.Publisher('/robot/limb/right/joint_command', JointCommand, queue_size=10) ### Gazebo Simulator Only!
 
         ## Control Gains
-        self.Kp = 1*np.eye(6) # Proportional
+        self.Kp = 2*np.eye(6) # Proportional
         self.Ki = 0*np.eye(6) # Intergral
 
         ## Robot Description
@@ -45,7 +45,10 @@ class VelCtrl:
         self.M = s_des.M
         # Set initial joint states to 0, may need to change in IRL use
         # ...but you might not
-        self.cur_config = np.zeros(8)
+        self.cur_config = np.zeros(9)
+        # Wait for actual joint_states to be stored by js_store() callback
+        while np.sum(self.cur_config) is 0:
+            rospy.sleep(0.1)
 
         # Joint Command Message Init
         self.joint_ctrl_msg = JointCommand()
@@ -64,8 +67,12 @@ class VelCtrl:
 
     def ctrl_r(self, X_d):
         # Get current joint positions
-        # all 0 if not yet recieved from js_store() callback method below
-        cur_theta_list = np.ndarray.tolist(np.delete(self.cur_config, 1))
+        # joint_states are sent from Sawyer with names:
+        # [head_pan, right_j0, right_j1, right_j2, right_j3, right_j4,
+        #  right_j5, right_j6, torso_t0]
+        # Before calculation, we need to remove the first and last elements
+        cur_theta_list = np.delete(self.cur_config, 0)
+        cur_theta_list = np.ndarray.tolist(np.delete(cur_theta_list, -1))
 
         # Get desired end endeff transform
         # EndEff frame initially in displacement-quaternion form...
@@ -99,9 +106,9 @@ class VelCtrl:
         theta_dot = np.dot(J_b_pinv, V_b)
         # Limit joint speed to 2 rad/sec
         for i in range(len(theta_dot)):
-            if abs(theta_dot[i]) > 0.1:
-                theta_dot[i] = np.sign(theta_dot[i])*0.1
-        print theta_dot
+            if abs(theta_dot[i]) > 0.6:
+                # print theta_dot
+                theta_dot[i] = np.sign(theta_dot[i])*0.6
         # Reinsert a 0 joint velocity command for the head_pan joint
         theta_dot = np.insert(theta_dot,1,0)
         # Convert to list because JointCommand messages are PICKY

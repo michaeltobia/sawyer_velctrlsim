@@ -1,0 +1,6 @@
+<launch>
+    <node name="netft_node" pkg="netft_utils" type="netft_node" respawn="false" output="screen" args="192.168.1.1"/>
+    <node name="ft_bias_node" pkg="sawyer_velctrlsim" type="ft_bias_node.py" output="screen"/>
+    <node name="sawyer_vel_ctrl" pkg="sawyer_velctrlsim" type="sawyer_vel_ctrl.py" output="screen"/>
+    <node name="ref_trajectory" pkg="sawyer_velctrlsim" type="force_ctrl_traj_gen.py" output="screen"/>
+</launch>
