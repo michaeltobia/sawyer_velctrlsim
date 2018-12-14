@@ -112,3 +112,9 @@ That said, running this launch file while connected to Sawyer will cause Sawyer 
 trajectory specified in `traj_gen.py` "exactly" (approximately) the same way it does in `sim_vel_ctrl.launch`.
 
 #### `unidirectional_force_control.launch`
+
+* This is another non-simulation launch file in this package. This launch file makes
+use of an an ATI Axia 80 Force/Torque sensor attached to Sawyer's end effector. Custom
+hardware is required to attach the sensor to Sawyer's wrist, as can be seen in the
+following figure.
+<!-- NEED AN IMAGE HERE -->
