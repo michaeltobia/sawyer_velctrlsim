@@ -1,5 +1,7 @@
 # Sawyer Velocity Control
 
+![Sawyer Glam Shot](images/glam-shot-800x800.jpg)
+
 ## Summary
 This package is used to apply task-space velocity control to Rethink Robotic's Sawyer
 to follow a specified trajectory.
@@ -228,11 +230,15 @@ in `modern_robotics.py` can understand.
 `unidirectional_force_control.launch`
 * Control gains can be adjusted in the code [here](https://github.com/michaeltobia/sawyer_velctrlsim/blob/master/src/sawyer_vel_ctrl.py#L39-L41)
 * As mentioned before, joint velocity command limit can be changed [here](https://github.com/michaeltobia/sawyer_velctrlsim/blob/master/src/sawyer_vel_ctrl.py#L108-L111),
-though I would **not** recommend setting it much higher than 0.6 rad/sec (where it is now.)]
+though I would **not** recommend setting it much higher than 0.6 rad/sec (where it is now.)
 * Extra detail was put into the comments here in hopes that they
 might help users understand the task-space velocity control pipeline used in
 Dr. Lynch's Modern Robotics, since this type of pipeline is useful for many
 applications.
+* Quick note: intera_core_msgs types are very pick. Make sure you're using python
+standard data types (eg `int()`) and **not** ROS std_msgs message types (eg `Int32()`
+,`Float64()`, ect.)
+when passing data to intera messages.
 
 #### `traj_gen.py`
 * Used in `sim_vel_ctrl.launch` and `sawyer_vel_ctrl.launch`
