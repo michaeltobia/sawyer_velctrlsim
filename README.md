@@ -12,21 +12,9 @@ end effector. Readings from this sensor are fed into a control loop which genera
 trajectories. These trajectories are used to approximate the behaviors of true interaction
 and hybrid motion-force controllers.
 
-In a general sense, the task-space velocity control found in this package is based
-on the following control law, found in Dr. Kevin Lynch's Modern Robotics.
-
-\begin{equation}
-\ V_{b}( t) =[ Ad_{X^{-1} X_{d}}] V_{d}( t) +K_{p} X_{e}( t) +K_{i} \int X_{e}( t) dt
-\end{equation}
-
-\begin{equation}
-where...\ [ X_{e}] =\log\left( X^{-1} X_{d}\right) ;[ X_{e}] \in se( 3)
-\end{equation}
-
-Its important to note that $$X_{e}$$ here represents a unit twist that takes
-the current end effector transform to the desired end effector transform in one
-unit time, and not just simple subtraction of transforms. More information on the
-concepts behind this project can be found on its corresponding page in my portfolio.
+If you are interested in learning about my approach to this problem and the
+concepts behind its controls, please take a look at my portfolio post on this
+project here.
 
 <!-- ADD LINK TO PORTFOLIO POST!!  -->
 
@@ -85,11 +73,10 @@ the `/joint_states` topic that the `robot_state_publisher` subscribes to for tf 
 Sawyer can be seen following the trajectory specified in `traj_gen.py`
 
 * Though unnecessary for real world use, this launch file is incredibly useful
-for visualizing the velocity control loop when used with `rqt_graph`. Since using
-`rqt_graph` while connected to the real world Sawyer is a bad idea because of the sheer
-number of running nodes and topics, use in this simulated version shows a clean loop
-representing (approximately) how the real world control loop will work. The following image is
-a screen capture of `rqt_graph` captured while running this launch file.
+for visualizing the velocity control loop when used with `rqt_graph`. Using `rqt_graph`
+on a real world Sawyer is not very useful because of the sheer number of running
+nodes and topics. Here, `rqt_graph` presents a clean representation of the simulated
+control loop (and approximation of the real world control loop) as seen below.
 
 ![and rqt_graph view of sim_vel_ctrl.launch](images/sim_vel_ctrl_rqt_graph.png)
 
@@ -148,7 +135,8 @@ following figure.
 
  2. `ft_bias_node`: Essentially a pass-through node, stores all `WrenchStamped`
  messaged received over the `/netft_data`, subtracts a bias, then publishes the biased
- data as `WrenchStamped` messages over the `/biased_ft_data` topic. Uses custom service `bias_ft_data`
+ data as `WrenchStamped` messages over the `/biased_ft_data` topic. Also applies a
+ moving average filer. Uses custom service `bias_ft_data`
  with custom `Bias.srv` service message. When this service is called, the current sensor readings are
  stored in the `ft_bias_node` under `self.biased_data`. This is the bias subtracted from the sensor data.
  This service should be called as soon as possible after running this launch file and anytime the end
@@ -185,14 +173,104 @@ following figure.
 ### Script File Details
 
 #### `force_ctrl_traj_gen.py`
+* Used in `unidirectional_force_control.launch`
+* Subscribes to end effector attached force/torque sensor data
+* Calculates trajectories for the velocity controller based on desired force control behaviors
+* Trajectories are specified relative to Sawyers base frame. Comments in the
+[trajectory() method](https://github.com/michaeltobia/sawyer_velctrlsim/blob/ab5f22de727a5c1a07d79cf15d9931acbb78e38b/src/force_ctrl_traj_gen.py#L42) indicate how trajectory sign corresponds to end effector movement.
+* This file is in desperate need of organization, which will be addressed in the very near future
+* Control gains can and desired end effector wrench can be easily changed [here](https://github.com/michaeltobia/sawyer_velctrlsim/blob/ab5f22de727a5c1a07d79cf15d9931acbb78e38b/src/force_ctrl_traj_gen.py#L28), but I would recommend doing so with caution. Non-zero desired
+wrenchs have contradictory effects on the system, which tries both to apply the
+non-zero wrench while also keeping the end effector stationary. Also, derivative
+control on a force sensor is not very useful due to magnitude of noise, and was
+experimentally included.
+* Desired end effector rotation and position can also be changed. It is entirely
+possible to have these change over time, as the current rospy time is passed into
+the trajectory generator as a usable argument. This is useful for following a
+Cartesian trajectory while applying force control in the perpendicular axis, for
+applications like surface tracking. E.g. force control can be specified in the
+`x_d` position while a surface scanning trajectory is specified in `y_d` and `z_d`.
+
+
 #### `ft_bias_node.py`
+* Used in `unidirectional_force_control.launch`
+* Subscribes to the raw force/torque sensor readings
+* Applies a 6 sample moving average filter
+* Uses the `bias_ft_data` service to apply a bias to the sensor, effectively
+zeroing-out the sensor. Helps to counteract drift **(sensor has least drift
+when running at 24V)**
+
 #### `io_util.py`
+* Used by `rand_ref_vel_ctrl.launch` to catch user input and start the velocity control loop
+
 #### `modern_robotics.py`
+* Used by everything
+* Library for Modern Robotics by Dr. Kevin Lynch.
+
 #### `ref_rand_joint_state_pub.py`
+* Used in `rand_ref_vel_ctrl.launch`
+* Publishes the random joint states used to calculate the desired end effector position
+that the velocity control tries to reach on user input
+
 #### `ref_vel_ctrl.py`
+* Used in `rand_ref_vel_ctrl.launch`
+* Drives the simulated sawyer to the desired end effector position prescribed by
+`ref_rand_joint_state_pub.py`
+* Publishes joint positions interpolated from the calculated velocity commands
+
 #### `sawyer_MR_description.py`
+* Used in control calculations
+* Sawyer's kinematic description in a format that the Modern Robotics library
+in `modern_robotics.py` can understand.
+
 #### `sawyer_vel_ctrl.py`
+* Used in the real world control launch files `sawyer_vel_ctrl.launch` and
+`unidirectional_force_control.launch`
+* Control gains can be adjusted in the code [here](https://github.com/michaeltobia/sawyer_velctrlsim/blob/master/src/sawyer_vel_ctrl.py#L39-L41)
+* As mentioned before, joint velocity command limit can be changed [here](https://github.com/michaeltobia/sawyer_velctrlsim/blob/master/src/sawyer_vel_ctrl.py#L108-L111),
+though I would **not** recommend setting it much higher than 0.6 rad/sec (where it is now.)]
+* Extra detail was put into the comments here in hopes that they
+might help users understand the task-space velocity control pipeline used in
+Dr. Lynch's Modern Robotics, since this type of pipeline is useful for many
+applications.
+
 #### `traj_gen.py`
+* Used in `sim_vel_ctrl.launch` and `sawyer_vel_ctrl.launch`
+* Publishes the desired trajectory to the velocity controller
+* Desired trajectory frame position and rotation can be freely specified in time
+ * relative to Sawyer's base frame
+ * x_d, y_d, and z_d specify desired position
+ * [theta](https://github.com/michaeltobia/sawyer_velctrlsim/blob/ab5f22de727a5c1a07d79cf15d9931acbb78e38b/src/traj_gen.py#L39) specifies the desired rotation magnitude
+ * The coefficients in [`q1_d`, `q2_d`, `q3_d`](https://github.com/michaeltobia/sawyer_velctrlsim/blob/master/src/traj_gen.py#L41-L43) specify
+ the base axes to rotate about
+ * Rotation quaternion can also just be hardcoded in under [`Q_d`](https://github.com/michaeltobia/sawyer_velctrlsim/blob/ab5f22de727a5c1a07d79cf15d9931acbb78e38b/src/traj_gen.py#L44)
+
 #### `vel_ctrl_sim_interface.py`
+* Used by `sim_vel_ctrl.launch`
+* Interpolates and publishes a simulated Sawyer's joints positions based on the
+joint velocity commands from `sim_vel_ctrl.py`
+
 
 ### Future Work and Possible Improvements
+* Video of the real world applied launch files running on sawyer will be added very soon
+* As mentioned above, the force control implemented here is fairly unstable and unreliable,
+there are a few ways to approach this.
+ * Pure force control, where the end effector is completely constrained, would not be
+ difficult to achieve here. Completely constraining the end effector means there
+ are no dynamics to consider, and a torque control can used to control how much
+ force is applied at the end effector. Once this is complete, a comparison between
+ the accuracy of Sawyer's internal end effector wrench estimation system and the
+ external force/torque sensor can be made.
+ * Though it would require extensive changes, using torque control for the motion
+ control portion of this project would create instant improvements in accuracy and stability
+ * Routing the force control through the trajectory generation of the motion control
+ is not the traditional way to approach hybrid force-motion control to a robot.
+ Typically, constraints are calculated and the force and motion controllers are
+ applied in parallel. This would eliminate the problems that can be seen in
+ `unidirectional_force_control.launch`. If you are interested in learning more about
+ traditional hybrid force-motion control, please see my portfolio post on this
+ project here.
+ <!-- LINK TO PORTFOLIO POST -->
+* I will also be adding a non force-control trajectory generator that Sawyer can follow
+before engaging the force controller. This will make surface following and
+interaction control much easier and less unpredictable to set up.

@@ -34,8 +34,7 @@ class VelCtrl:
         rospy.Subscriber("/robot/joint_states", JointState, self.js_store)
 
         # Control Message Publisher
-        self.pub = rospy.Publisher('/robot/limb/right/joint_command', JointCommand, queue_size=10) ### Gazebo Simulator Only!
-
+        self.pub = rospy.Publisher('/robot/limb/right/joint_command', JointCommand, queue_size=10)
         ## Control Gains
         self.Kp = 2*np.eye(6) # Proportional
         self.Ki = 0*np.eye(6) # Intergral
