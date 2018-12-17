@@ -97,10 +97,10 @@ class VelCtrl:
         # Calculate joint velocity command from theta_dot = pinv(J_b)V_b
         J_b_pinv = np.linalg.pinv(J_b)
         theta_dot = np.dot(J_b_pinv, V_b)
-        # Limit joint speed to 2 rad/sec
+        # Limit joint speed to 1 rad/sec
         for i in range(len(theta_dot)):
-            if abs(theta_dot[i]) > 0.1:
-                theta_dot[i] = np.sign(theta_dot[i])*0.1
+            if abs(theta_dot[i]) > 1:
+                theta_dot[i] = np.sign(theta_dot[i])*1
         print theta_dot
         # Reinsert a 0 joint velocity command for the head_pan joint
         theta_dot = np.insert(theta_dot,1,0)
